@@ -33,7 +33,7 @@ using namespace std;
  */
 int main(int argc, char** argv)
 {
-    /** DEBUGGING
+    /** DEBUGGING *
 
     string test = "hello";
     string hold;
@@ -64,10 +64,7 @@ int main(int argc, char** argv)
     check1 = trie2.insert("git", 3);
     check1 = trie2.insert("github", 1337);
 
-    */
-
-    char yes = 'y';
-    char underscore = '_';
+    //*/
 
     // exit  due to incorrect argument count
     if(argc != 2) {
@@ -84,7 +81,6 @@ int main(int argc, char** argv)
     DictionaryTrie dictionary;
     vector<string> completions;
     ifstream load;
-    bool hasUnderscore = false;
 
     cout << "Reading file: " << file << endl;
 
@@ -107,17 +103,7 @@ int main(int argc, char** argv)
 
         convert >> numCompletions;
 
-        for(char& c : prefix) {
-            if (c == underscore) {
-                hasUnderscore = true;
-                break;
-            }
-        }
-
-        if(hasUnderscore)
-            completions = dictionary.predictUnderscore(prefix, numCompletions);
-        else
-            completions = dictionary.predictCompletions(prefix, numCompletions);
+        completions = dictionary.predictCompletions(prefix, numCompletions);
 
         for(auto itr = completions.begin(); itr != completions.end(); ++itr)
             cout << *itr << endl;
@@ -127,7 +113,7 @@ int main(int argc, char** argv)
 
         cin.ignore();
 
-    } while(_continue == yes);
+    } while(_continue == 'y');
 
     return 0;
 }

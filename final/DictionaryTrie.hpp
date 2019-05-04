@@ -26,6 +26,8 @@ using namespace std;
 /**
  *  The class for a dictionary ADT, implemented as a ternery trie
  */
+
+
 class DictionaryTrie
 {
 private:
@@ -52,80 +54,44 @@ private:
 
         if(curr == nullptr) return;
 
-        getCompletions(word, curr->left);
+        if(topResults.size() < numResults || curr->fleft >= threshold)
+            getCompletions(word, curr->left);
 
-        getCompletions(word, curr->right);
+        if(topResults.size() < numResults || curr->fright >= threshold)
+            getCompletions(word, curr->right);
 
-        if(curr->middle) getCompletions(word + curr->_char, curr->middle);
+        if(curr->middle && (topResults.size() < numResults || curr->fmid >= threshold))
+            getCompletions(word + curr->_char, curr->middle);
 
 
         // insert if a word
-        if(curr->freq > 0)
+        if((topResults.size() < numResults && curr->freq > 0) || curr->freq > threshold) {
             numComplete.push(Word(word + curr->_char, curr->freq));
 
-    }
+            topResults.insert(topResults.begin(), curr->freq);
 
-    int postUnderscore(string postUnderscore,TNode* node) {
-
-        if(postUnderscore == EMPTYSTR || root == nullptr) return 0;
-
-        TNode* curr = node;
-        int index = 0;
-        int length = postUnderscore.length();
-
-        // simply, perform trinary search
-        while(index < length)
-        {
-            // check middle and check if word
-            if(curr->_char == postUnderscore[index])
-            {
-                index++;
-
-                if(index == length && curr->freq > 0) return curr->freq;
-
-                else if(curr->middle == nullptr) return 0;
-
-                else curr = curr->middle;
-            }
-
-            // check left
-            else if(postUnderscore[index] < curr->_char)
-            {
-                if(curr->left == nullptr) return 0;
-
-                else curr = curr->left;
-            }
-
-
-            // check right
+            if(topResults.size() < numResults + 2)
+                sort(topResults.begin(), topResults.end());
             else
-            {
-                if(curr->right == nullptr) return 0;
+                sort(topResults.begin(), topResults.begin() + numResults + 1);
 
-                else curr = curr->right;
-            }
+            if(topResults.size() >= numResults)
+                threshold = topResults[0];
+            else if((topResults.size() < numResults && curr->freq < threshold) || threshold == 0)
+                threshold = curr->freq;
+
         }
 
-        return 0;
     }
 
-    void getChildren(TNode* curr, queue<TNode*>& children) {
-
-        if(curr == nullptr) return;
-
-        getChildren(curr->left, children);
-
-        children.push(curr);
-
-        getChildren(curr->right, children);
-
-
-    }
+    unsigned int threshold;
+    unsigned int numResults;
+    vector<int> topResults;
 
 public:
 
   /** Create a new Dictionary that uses a Trie back end */
-  DictionaryTrie() : root(nullptr) {}
+  DictionaryTrie() : root(nullptr), threshold(0) {}
 
 /**
  * Insert a word with its frequency into the dictionary.
@@ -137,6 +103,9 @@ public:
  */
     bool insert(string word, unsigned int freq)
     {
+
+        if (word == "git her")
+            cout << " sd";
 
         // reject empty string
         if(word == EMPTYSTR) return false;
@@ -165,6 +134,7 @@ public:
             // check middle child
             if(curr->_char == word[index])
             {
+
                 if(curr->middle == nullptr)
                 {
                     // reject duplicate (no middle child)
@@ -177,19 +147,22 @@ public:
                         // done inserting word
                         if(index + 1 == length - 1)
                         {
+                            if(curr->fmid < freq) curr->fmid = freq;
                             curr->middle->freq = freq;
                             return true;
                         }
                     }
                 }
 
-                // if inserting as a substring of another string
                 if(index + 1 == length && curr->freq == 0) {
+                    if(curr->fmid < freq) curr->fmid = freq;
                     curr->freq = freq;
                     return true;
                 }
 
+
                 // check next character in string
+                if(curr->fmid < freq) curr->fmid = freq;
                 curr = curr->middle;
                 index++;
             }
@@ -197,34 +170,52 @@ public:
             // check left child
             else if(word[index] < curr->_char)
             {
+
                 if(curr->left == nullptr)
                 {
                     // create new left node if necessary
                     curr->left = new TNode(word[index]);
 
                     if (index + 1 == length) {
+                        if(curr->fleft < freq) curr->fleft = freq;
                         curr->left->freq = freq;
                         return true;
                     }
                 }
 
+                if(index + 1 == length && curr->freq == 0) {
+                    if(curr->fleft < freq) curr->fleft = freq;
+                    curr->freq = freq;
+                    return true;
+                }
 
+                if(curr->fleft < freq) curr->fleft = freq;
                 curr = curr->left;
             }
 
             // check right child
             else
             {
+
                 if(curr->right == nullptr)
                 {
                     curr->right = new TNode(word[index]);
 
                     if(index + 1 == length)
                     {
+                        if(curr->fright < freq) curr->fright = freq;
                         curr->right->freq = freq;
                         return true;
                     }
                 }
+
+                if(index + 1 == length && curr->freq == 0) {
+                    if(curr->fright < freq) curr->fright = freq;
+                    curr->freq = freq;
+                    return true;
+                }
+
+                if(curr->fright < freq) curr->fright = freq;
                 curr = curr->right;
             }
 
@@ -282,6 +273,7 @@ public:
       return false;
   }
 
+
   /** Return up to num_completions of the most frequent completions
    * of the prefix, such that the completions are words in the dictionary.
    * These completions should be listed from most frequent to least.
@@ -296,6 +288,9 @@ public:
   {
       numComplete = priority_queue<Word, vector<Word>, Compare>();
       vector<string> mostFreqStr = vector<string>();
+      numResults = num_completions;
+      threshold = 0;
+      topResults = vector<int>();
 
       TNode* curr = root;
       int index = 0;
@@ -347,7 +342,7 @@ public:
 
   }
 
-  /* Return up to num_completions of the most frequent completions
+  /**Return up to num_completions of the most frequent completions
    * of the pattern, such that the completions are words in the dictionary.
    * These completions should be listed from most frequent to least.
    * If there are fewer than num_completions legal completions, this
@@ -358,82 +353,9 @@ public:
    * of the pattern)
    */
   vector<string> predictUnderscore(string pattern, unsigned int num_completions){
+      vector<string> empty;
 
-      numComplete = priority_queue<Word, vector<Word>, Compare>();
-      vector<string> mostFreqStr = vector<string>();
-      queue<TNode*> preUnderscore = queue<TNode*>();
-
-      TNode* curr = root;
-      int index = 0;
-      int preLength = pattern.length();
-      char underscore = '_';
-      int freq = 0;
-
-      // no completion suggestions
-      if(num_completions == 0) return  mostFreqStr;
-
-      // go to pre-underscore position
-      while(curr && index < preLength && pattern[index] != underscore)
-      {
-          if(curr->_char == pattern[index])
-          {
-              index++;
-
-              if(index != preLength) curr = curr->middle;
-          }
-
-          else if(pattern[index] < curr->_char)
-          {
-              curr = curr->left;
-          }
-
-          else
-          {
-              curr = curr->right;
-          }
-      }
-
-      getChildren(curr, preUnderscore);
-
-      // underscore at end
-      if(pattern[pattern.length() - 1] == underscore) {
-          while(preUnderscore.size()) {
-              curr = preUnderscore.front();
-
-              if(curr->freq > 0) {
-                  pattern[index] = curr->_char;
-                  numComplete.push(Word(pattern, curr->freq));
-              }
-
-              preUnderscore.pop();
-
-          }
-      }
-
-      // make better
-      while(pattern[pattern.length() - 1] != underscore && preUnderscore.size()) {
-          curr = preUnderscore.front();
-
-          if(curr->middle)
-            freq = postUnderscore(pattern.substr(index + 1, pattern.length()),curr->middle);
-
-          if(freq) {
-              pattern[index] = curr->_char;
-              numComplete.push(Word(pattern, freq));
-          }
-
-          preUnderscore.pop();
-      }
-
-      unsigned int i = 0;
-      while(numComplete.size() != 0 && i < num_completions) {
-          mostFreqStr.push_back(numComplete.top().first);
-          numComplete.pop();
-          ++i;
-      }
-
-      return mostFreqStr;
-
+      return empty;
   }
 
   /** Destructor */

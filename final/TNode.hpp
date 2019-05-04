@@ -25,11 +25,16 @@ public:
     TNode* middle;
     char _char;
     unsigned int freq;
+    int fmid;
+    int fright;
+    int fleft;
+
 
     /** Default constructor for TNode*/
     TNode() {
         left = right = middle = nullptr;
         freq = 0;
+        fmid = fright = fleft  = 0;
     }
 
     /** Make a new TNode with char c*/
@@ -37,6 +42,7 @@ public:
         left = right = middle = nullptr;
         freq = 0;
         _char = c;
+        fmid = fright = fleft  = 0;
     }
 };
 
