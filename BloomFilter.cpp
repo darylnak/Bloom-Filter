@@ -108,7 +108,6 @@ void BloomFilter::processURLs(ifstream& file, string goodUrls, ofstream& output,
     file.close();
     file.seekg(0, ios::beg);
     output.close();
-    output.seekg(0, ios::beg);
 }
 
 /** Insert an item into the bloom filter */
