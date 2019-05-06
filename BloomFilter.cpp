@@ -12,7 +12,6 @@
  *               been inserted before. Small amount of false positives is
  *               possible but there will be no false negatives.
  */
- */
 
 #include "BloomFilter.hpp"
 #include <iostream>
