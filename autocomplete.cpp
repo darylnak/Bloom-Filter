@@ -82,7 +82,6 @@ int main(int argc, char** argv)
     //*/
 
     char yes = 'y';
-    char underscore = '_';
 
     // exit  due to incorrect argument count
     if(argc != 2) {
