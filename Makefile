@@ -8,7 +8,6 @@ CXXFLAGS=-std=c++11 -g -Wall
 LDFLAGS=-g
 
 all: autocomplete benchtrie firewall
-#firewall hashStats
 
 benchtrie: benchtrie.o util.o
 	$(CXX) $(CXXFLAGS) -o benchtrie benchtrie.o util.o
@@ -33,12 +32,6 @@ firewall.o: firewall.cpp
 
 MurmurHash3.o: MurmurHash3.cpp MurmurHash3.h
 	$(CXX) $(CXXFLAGS) -c MurmurHash3.cpp
-
-#benchtrie: util.o DictionaryTrie.o
-
-#hashStats: BloomFilter.o
-
-#test: util.o DictionaryTrie.o
 
 util.o: util.cpp util.hpp
 	$(CXX) $(CXXFLAGS) -c util.cpp
