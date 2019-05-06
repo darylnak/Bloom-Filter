@@ -1,10 +1,22 @@
+/**
+ * Filename:     BloomFilter.hpp
+ *
+ * Team:         Brandon Olmos (bolmos@ucsd.edu),
+ *               Daryl Nakamoto (dnakamot@ucsd.edu)
+ *
+ * Reference(s): cplusplus.com
+ *           +++ https://github.com/aappleby/smhasher/wiki/MurmurHash3
+ *
+ * Description:  Bloom filter used to make predictions on mixed unknown urls
+ */
+
 #ifndef BLOOM_FILTER_HPP
 #define BLOOM_FILTER_HPP
 
-#include <string>
 #include <fstream>
-#include "MurmurHash3.h"
+#include <string>
 #include <stdint.h>
+#include "MurmurHash3.h" // See +++ above
 
 using namespace std;
 
@@ -15,36 +27,39 @@ using namespace std;
  */
 class BloomFilter {
 
-public:
-
-    /* Create a new bloom filter with the size in bytes */
-    BloomFilter(uint64_t numBytes);
-
-    /* Insert an item into the bloom filter */
-    void insert(std::string item);
-
-    /* Determine whether an item is in the bloom filter */
-    bool find(std::string item);
-
-    void trainFilter(ifstream& file, string badUrls, BloomFilter& filter);
-
-    void processURLs(ifstream& file, string goodUrls, ofstream& output,
-            string outputFile, double& numOutput, double& numUrls);
-
-    /* Destructor for the bloom filter */
-    ~BloomFilter();
-
 private:
 
-
-
-    // The char array as the hash table
+    // create has table using char array. The bits are the spots
     unsigned char* table;
     uint64_t tableSize;
-    void setBit(uint64_t pos);
-    bool hasBit(uint64_t pos);
 
-    // TODO: Add your own data and method here
+
+    /** insert in pos position of hash table */
+    void setBit(unsigned int pos);
+
+    /** check if pos position in hash table is filled */
+    bool hasBit(unsigned int pos);
+
+public:
+
+    /** Destructor for the bloom filter */
+    ~BloomFilter();
+
+    /** Create a new bloom filter with the size in bytes */
+    BloomFilter(uint64_t numBytes);
+
+    /** Insert an item into the bloom filter */
+    void insert(std::string item);
+
+    /** Determine whether an item is in the bloom filter */
+    bool find(std::string item);
+
+    /** train bloom filter */
+    void trainFilter(ifstream& file, string badUrls, BloomFilter& filter);
+
+    /** read file of urls and write good urls to an output file */
+    void processURLs(ifstream& file, string goodUrls, ofstream& output,
+            string outputFile, double& numOutput, double& numUrls);
 
 };
 #endif // BLOOM_FILTER

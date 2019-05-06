@@ -42,38 +42,92 @@ private:
         }
     };
 
-    priority_queue<Word, vector<Word>, Compare> numComplete;
     TNode* root;
 
-    /** predictCompletions helper function; return ALL suggestions */
-    void getCompletions(string word, TNode* curr) {
+    // number of suggestions to return
+    priority_queue<Word, vector<Word>, Compare> numComplete;
 
-        // naive post-order traversal to get all words for a given prefix
+    /** PredictCompletions helper function; return ALL suggestions.
+     *  Returns the frequency of the most frequent words in order.
+     *  Traversed in order, so traversed in alphanumerical order.
+     *  This is why the words can be directly inserted into a vector,
+     *  rather than a priority queue.
+     */
+    int getCompletions(string word, TNode* curr, unsigned int highestFreq,
+            vector<string>& numComplete, unsigned int& num_completions) {
 
-        if(curr == nullptr) return;
+        // remember next best frequency and result from a recursive call
+        unsigned int nextBest = 0;
+        unsigned int recResult = 0;
 
-        getCompletions(word, curr->left);
+        // stop search if obtained number of completions requested
+        if(numComplete.size() < num_completions) {
 
-        getCompletions(word, curr->right);
+            /** Check if the current highest frequency word was found.
+             *  Push into the return vector if so.
+             */
+            if (curr->freq == highestFreq)
+                numComplete.push_back(word + curr->_char);
 
-        if(curr->middle) getCompletions(word + curr->_char, curr->middle);
+            // Search for words to the left and return next best if it was left
+            if (curr->left) {
+                if (curr->fleft >= highestFreq) {
+                    recResult = getCompletions(word, curr->left, highestFreq,
+                                               numComplete, num_completions);
 
+                    // check if found a better next frequency
+                    if (recResult > nextBest) nextBest = recResult;
+                } else if (curr->fleft > nextBest)
+                    nextBest = curr->fleft;
+            }
 
-        // insert if a word
-        if(curr->freq > 0)
-            numComplete.push(Word(word + curr->_char, curr->freq));
+            // Search for words to the mid and return next best if it was mid
+            if (curr->middle) {
+                if (curr->fmid >= highestFreq) {
+                    recResult = getCompletions(word + curr->_char, curr->middle,
+                                               highestFreq, numComplete,
+                                               num_completions);
 
+                    // check if found a better next frequency
+                    if (recResult > nextBest) nextBest = recResult;
+                } else if (curr->fmid > nextBest)
+                    nextBest = curr->fmid;
+            }
+
+            //Search for words to the right and return next best if it was right
+            if (curr->right) {
+                if (curr->fright >= highestFreq) {
+                    recResult = getCompletions(word, curr->right, highestFreq,
+                                               numComplete, num_completions);
+
+                    // check if found a better next frequency
+                    if (recResult > nextBest) nextBest = recResult;
+                } else if (curr->fright > nextBest)
+                    nextBest = curr->fright;
+            }
+
+            /** check if a next best was found. Will be false no more words with
+            *   prefix
+            */
+            if (curr->freq > nextBest && curr->freq < highestFreq)
+                nextBest = curr->freq;
+
+        }
+
+        return nextBest;
     }
 
+    /** find most frequent words with wildcard (exact length of input) */
     int postUnderscore(string postUnderscore,TNode* node) {
 
+        // check for empty input or empty tree
         if(postUnderscore == EMPTYSTR || root == nullptr) return 0;
 
         TNode* curr = node;
         int index = 0;
         int length = postUnderscore.length();
 
-        // simply, perform trinary search
+        // perform trinary search
         while(index < length)
         {
             // check middle and check if word
@@ -109,6 +163,10 @@ private:
         return 0;
     }
 
+    /** Get all children the left and right of curr
+     *  Used for pre underscore to fill underscore.
+     *  All potential letters to be in word will be to the left or right
+     */
     void getChildren(TNode* curr, queue<TNode*>& children) {
 
         if(curr == nullptr) return;
@@ -118,8 +176,6 @@ private:
         children.push(curr);
 
         getChildren(curr->right, children);
-
-
     }
 
 public:
@@ -162,6 +218,8 @@ public:
         // start insertion
         while(index < length) {
 
+            if(index + 1 == length && curr->freq > 0 && curr->_char  == word[index]) return false;
+
             // check middle child
             if(curr->_char == word[index])
             {
@@ -177,6 +235,7 @@ public:
                         // done inserting word
                         if(index + 1 == length - 1)
                         {
+                            if(freq > curr->fmid) curr->fmid = freq;
                             curr->middle->freq = freq;
                             return true;
                         }
@@ -190,6 +249,7 @@ public:
                 }
 
                 // check next character in string
+                if(freq > curr->fmid) curr->fmid = freq;
                 curr = curr->middle;
                 index++;
             }
@@ -203,12 +263,13 @@ public:
                     curr->left = new TNode(word[index]);
 
                     if (index + 1 == length) {
+                        if(freq > curr->fleft) curr->fleft = freq;
                         curr->left->freq = freq;
                         return true;
                     }
                 }
 
-
+                if(freq > curr->fleft) curr->fleft = freq;
                 curr = curr->left;
             }
 
@@ -221,10 +282,13 @@ public:
 
                     if(index + 1 == length)
                     {
+                        if(freq > curr->fright) curr->fright = freq;
                         curr->right->freq = freq;
                         return true;
                     }
                 }
+
+                if(freq > curr->fright) curr->fright = freq;
                 curr = curr->right;
             }
 
@@ -294,57 +358,64 @@ public:
    */
   vector<string> predictCompletions(string prefix, unsigned int num_completions)
   {
-      numComplete = priority_queue<Word, vector<Word>, Compare>();
-      vector<string> mostFreqStr = vector<string>();
+      vector<string> mostFreqStr;
+      mostFreqStr.reserve(num_completions);
 
       TNode* curr = root;
-      int index = 0;
-      int preLength = prefix.length();
+      unsigned int index = 0;
+      unsigned int preLength = prefix.length();
 
       // no completion suggestions
-      if(num_completions == 0) return  mostFreqStr;
+      if(num_completions == 0) return mostFreqStr;
 
       // go to prefix position
       while(curr && index < preLength)
       {
           if(curr->_char == prefix[index])
           {
-              index++;
-
-              if(index != preLength) curr = curr->middle;
+              if(++index != preLength) curr = curr->middle;
           }
 
           else if(prefix[index] < curr->_char)
-          {
               curr = curr->left;
-          }
 
           else
-          {
               curr = curr->right;
-          }
       }
 
       // prefix not found
       if(curr == nullptr) return mostFreqStr;
 
-      // if prefix is a word, add to queue
-      if(curr->freq > 0)
-          numComplete.push(Word(prefix, curr->freq));
+      unsigned int prefixFreq = curr->freq;
 
-      // start autocompletion
-      if(curr->middle)
-        getCompletions(prefix, curr->middle);
+      // push to queue if prefix is largest word
+      unsigned int max = curr->fmid;
 
-      unsigned int i = 0;
-      while(numComplete.size() != 0 && i < num_completions) {
-          mostFreqStr.push_back(numComplete.top().first);
-          numComplete.pop();
-          ++i;
+      if(max == 0 && prefixFreq > 0)
+          mostFreqStr.push_back(prefix);
+
+      // obtain num_completions completions
+      while(mostFreqStr.size() < num_completions && max != 0) {
+
+          if(prefixFreq >= max) {
+              mostFreqStr.push_back(prefix);
+              break;
+          }
+
+          max = getCompletions(prefix, curr->middle, max, mostFreqStr,
+                  num_completions);
       }
 
-      return mostFreqStr;
+      /** Obtain num_completions. To continue above while loop, but without
+       *  the if statement to improve time efficieny
+       */
+      while(mostFreqStr.size() < num_completions && max != 0) {
+          max = getCompletions(prefix, curr->middle, max, mostFreqStr,
+                  num_completions);
+      }
 
+      // return suggestions
+      return mostFreqStr;
   }
 
   /* Return up to num_completions of the most frequent completions
@@ -359,7 +430,7 @@ public:
    */
   vector<string> predictUnderscore(string pattern, unsigned int num_completions){
 
-      numComplete = priority_queue<Word, vector<Word>, Compare>();
+      priority_queue<Word, vector<Word>, Compare> numComplete;
       vector<string> mostFreqStr = vector<string>();
       queue<TNode*> preUnderscore = queue<TNode*>();
 

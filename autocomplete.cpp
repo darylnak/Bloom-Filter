@@ -19,21 +19,36 @@
 
 using namespace std;
 
+
+/** find an underscore in str. Return true if found, false if not.*/
+bool findUnderscoreIn(string str)
+{
+    for(char& c : str)
+    {
+        if(c == '_') return true;
+    }
+
+    return false;
+}
+
 /**
  * IMPORTANT! You should use the following lines of code to match the correct output:
- * 
+ *
  * cout << "This program needs exactly one argument!" << endl;
  * cout << "Reading file: " << file << endl;
  * cout << "Enter a prefix/pattern to search for:" << endl;
  * cout << "Enter a number of completions:" << endl;
  * cout << completion << endl;
  * cout << "Continue? (y/n)" << endl;
- * 
+ *
  * arg 1 - Input file name (in format like freq_dict.txt)
+ *
+ *
+ *  Run queries for autocompletion
  */
 int main(int argc, char** argv)
 {
-    /** DEBUGGING
+    /** DEBUGGING /*
 
     string test = "hello";
     string hold;
@@ -64,7 +79,7 @@ int main(int argc, char** argv)
     check1 = trie2.insert("git", 3);
     check1 = trie2.insert("github", 1337);
 
-    */
+    //*/
 
     char yes = 'y';
     char underscore = '_';
@@ -75,59 +90,57 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    string file = argv[1];          // get file name
+    DictionaryTrie dictionary;      // dictionary trie
+    vector<string> completions;     // hold completions to return
+    string file = argv[1];          // hold file name
     string prefix;                  // hold prefix
     string getCompletions;          // hold number of completions
-    unsigned int numCompletions;    //
+    unsigned int numCompletions;    // // hold number of completions
     char _continue;
     Utils read;
-    DictionaryTrie dictionary;
-    vector<string> completions;
     ifstream load;
     bool hasUnderscore = false;
 
     cout << "Reading file: " << file << endl;
-
-    load.open(file, ifstream::in);
-
-    read.load_dict(dictionary, load);
-
+    load.open(file, ifstream::in);      // open file
+    read.load_dict(dictionary, load);   // populate trie
     load.close();
 
 
     // start program
-    do {
+    do
+    {
         cout << "Enter a prefix/pattern to search for:" << endl;
         getline(cin, prefix);
 
         cout << "Enter a number of completions:" << endl;
         cin >> getCompletions;
 
+        // get number of completions from input. Convert string to integer
         istringstream convert(getCompletions);
-
         convert >> numCompletions;
 
-        for(char& c : prefix) {
-            if (c == underscore) {
-                hasUnderscore = true;
-                break;
-            }
-        }
+        // check for underscore/wildcard in prefix
+        hasUnderscore = findUnderscoreIn(prefix);
 
+        // run autocompletion with wild card
         if(hasUnderscore)
             completions = dictionary.predictUnderscore(prefix, numCompletions);
+
+        // run regular autocompletion
         else
             completions = dictionary.predictCompletions(prefix, numCompletions);
 
+        // print autocomplete suggestions
         for(auto itr = completions.begin(); itr != completions.end(); ++itr)
             cout << *itr << endl;
 
         cout << "Continue? (y/n)" << endl;
         cin >> _continue;
 
-        cin.ignore();
+        cin.ignore(); // clear new line character from input sequence
 
-    } while(_continue == yes);
+    } while(_continue == yes); // check if program needs to end
 
     return 0;
 }

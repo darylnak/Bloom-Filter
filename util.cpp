@@ -115,6 +115,8 @@ void Utils::load_dict(DictionaryTrie& dict, istream& words)
             if(i > 0) word = word + " ";
             word = word + word_string[i];
         }
+//        if(freq == 9)
+//            cout << "";
         dict.insert(word, freq);
         word_string.clear();
     }
