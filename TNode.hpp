@@ -24,10 +24,10 @@ public:
     TNode* right;
     TNode* middle;
     char _char;
-    unsigned int freq;
-    unsigned int fmid;
-    unsigned int fright;
-    unsigned int fleft;
+    int freq;
+    int fmid;
+    int fright;
+    int fleft;
 
     /** Default constructor for TNode*/
     TNode() {
