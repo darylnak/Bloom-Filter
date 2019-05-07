@@ -53,12 +53,12 @@ private:
      *  This is why the words can be directly inserted into a vector,
      *  rather than a priority queue.
      */
-    int getCompletions(string word, TNode* curr, unsigned int highestFreq,
+    int getCompletions(string& word, TNode*& curr, int& highestFreq,
             vector<string>& numComplete, unsigned int& num_completions) {
 
         // remember next best frequency and result from a recursive call
-        unsigned int nextBest = 0;
-        unsigned int recResult = 0;
+        int nextBest = 0;
+        int recResult = 0;
 
         // stop search if obtained number of completions requested
         if(numComplete.size() < num_completions) {
@@ -66,8 +66,11 @@ private:
             /** Check if the current highest frequency word was found.
              *  Push into the return vector if so.
              */
-            if (curr->freq == highestFreq)
-                numComplete.push_back(word + curr->_char);
+            if (curr->freq == highestFreq) {
+                word.push_back(curr->_char);
+                numComplete.push_back(word);
+                word.pop_back();
+            }
 
             // Search for words to the left and return next best if it was left
             if (curr->left) {
@@ -84,9 +87,10 @@ private:
             // Search for words to the mid and return next best if it was mid
             if (curr->middle) {
                 if (curr->fmid >= highestFreq) {
-                    recResult = getCompletions(word + curr->_char, curr->middle,
-                                               highestFreq, numComplete,
-                                               num_completions);
+                    word.push_back(curr->_char);
+                    recResult = getCompletions(word, curr->middle, highestFreq,
+                                               numComplete, num_completions);
+                    word.pop_back();
 
                     // check if found a better next frequency
                     if (recResult > nextBest) nextBest = recResult;
@@ -191,7 +195,7 @@ public:
  * when you want to test a certain case, but don't want to
  * write out a specific word 300 times.
  */
-    bool insert(string word, unsigned int freq)
+    bool insert(string word, int freq)
     {
 
         // reject empty string
@@ -362,18 +366,23 @@ public:
       mostFreqStr.reserve(num_completions);
 
       TNode* curr = root;
-      unsigned int index = 0;
-      unsigned int preLength = prefix.length();
+      int index = 0;
+      int preLength = prefix.length();
+
+
+      prefix.reserve(100);
+      string& str = prefix;
 
       // no completion suggestions
-      if(num_completions == 0) return mostFreqStr;
+      if(!num_completions) return mostFreqStr;
 
       // go to prefix position
       while(curr && index < preLength)
       {
           if(curr->_char == prefix[index])
           {
-              if(++index != preLength) curr = curr->middle;
+              index += 1;
+              if(index != preLength) curr = curr->middle;
           }
 
           else if(prefix[index] < curr->_char)
@@ -384,35 +393,35 @@ public:
       }
 
       // prefix not found
-      if(curr == nullptr) return mostFreqStr;
+      if(!curr) return mostFreqStr;
 
-      unsigned int prefixFreq = curr->freq;
+      int prefixFreq = curr->freq;
 
       // push to queue if prefix is largest word
-      unsigned int max = curr->fmid;
+      int max = curr->fmid;
 
-      if(max == 0 && prefixFreq > 0)
-          mostFreqStr.push_back(prefix);
+      if(!max && prefixFreq)
+          mostFreqStr.push_back(str);
 
       // obtain num_completions completions
-      while(mostFreqStr.size() < num_completions && max != 0) {
+      while(mostFreqStr.size() < num_completions && max) {
 
           if(prefixFreq >= max) {
-              mostFreqStr.push_back(prefix);
-              break;
+              mostFreqStr.push_back(str);
+              prefixFreq = 0;
           }
 
-          max = getCompletions(prefix, curr->middle, max, mostFreqStr,
+          max = getCompletions(str, curr->middle, max, mostFreqStr,
                   num_completions);
       }
-
-      /** Obtain num_completions. To continue above while loop, but without
-       *  the if statement to improve time efficieny
-       */
-      while(mostFreqStr.size() < num_completions && max != 0) {
-          max = getCompletions(prefix, curr->middle, max, mostFreqStr,
-                  num_completions);
-      }
+//
+//      /** Obtain num_completions. To continue above while loop, but without
+//       *  the if statement to improve time efficiency
+//       */
+//      while(mostFreqStr.size() < num_completions && max) {
+//          max = getCompletions(prefix, curr->middle, max, mostFreqStr,
+//                  num_completions);
+//      }
 
       // return suggestions
       return mostFreqStr;
