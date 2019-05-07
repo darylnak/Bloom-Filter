@@ -67,7 +67,8 @@ private:
              *  Push into the return vector if so.
              */
             if (curr->freq == highestFreq) {
-                numComplete.push_back(word += curr->_char);
+                word.push_back(curr->_char);
+                numComplete.push_back(word);
                 word.pop_back();
             }
 
@@ -86,10 +87,9 @@ private:
             // Search for words to the mid and return next best if it was mid
             if (curr->middle) {
                 if (curr->fmid >= highestFreq) {
-                    recResult = getCompletions(word += curr->_char, curr->middle,
-                                               highestFreq, numComplete,
-                                               num_completions);
-
+                    word.push_back(curr->_char);
+                    recResult = getCompletions(word, curr->middle, highestFreq,
+                                               numComplete, num_completions);
                     word.pop_back();
 
                     // check if found a better next frequency
@@ -364,16 +364,17 @@ public:
   {
       vector<string> mostFreqStr;
       mostFreqStr.reserve(num_completions);
-      //prefix.reserve(100);
 
       TNode* curr = root;
       int index = 0;
       int preLength = prefix.length();
+
+
+      prefix.reserve(100);
       string& str = prefix;
-      str.reserve(100);
 
       // no completion suggestions
-      if(num_completions == 0) return mostFreqStr;
+      if(!num_completions) return mostFreqStr;
 
       // go to prefix position
       while(curr && index < preLength)
@@ -392,7 +393,7 @@ public:
       }
 
       // prefix not found
-      if(curr == nullptr) return mostFreqStr;
+      if(!curr) return mostFreqStr;
 
       int prefixFreq = curr->freq;
 
@@ -407,20 +408,20 @@ public:
 
           if(prefixFreq >= max) {
               mostFreqStr.push_back(str);
-              break;
+              prefixFreq = 0;
           }
 
           max = getCompletions(str, curr->middle, max, mostFreqStr,
                   num_completions);
       }
-
-      /** Obtain num_completions. To continue above while loop, but without
-       *  the if statement to improve time efficieny
-       */
-      while(mostFreqStr.size() < num_completions && max) {
-          max = getCompletions(prefix, curr->middle, max, mostFreqStr,
-                  num_completions);
-      }
+//
+//      /** Obtain num_completions. To continue above while loop, but without
+//       *  the if statement to improve time efficiency
+//       */
+//      while(mostFreqStr.size() < num_completions && max) {
+//          max = getCompletions(prefix, curr->middle, max, mostFreqStr,
+//                  num_completions);
+//      }
 
       // return suggestions
       return mostFreqStr;

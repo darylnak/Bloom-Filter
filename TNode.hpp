@@ -25,9 +25,9 @@ public:
     TNode* middle;
     char _char;
     int freq;
-    int fmid;
-    int fright;
-    int fleft;
+    int fmid;   // most frequent word that went down the middle child
+    int fright; // most frequent word that went down the right child
+    int fleft;  // most frequent word that went down the left child
 
     /** Default constructor for TNode*/
     TNode() {
